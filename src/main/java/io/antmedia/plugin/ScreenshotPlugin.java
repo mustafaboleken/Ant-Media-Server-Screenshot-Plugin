@@ -8,8 +8,8 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Component;
 
 import io.antmedia.AntMediaApplicationAdapter;
-import io.antmedia.app.SampleFrameListener;
-import io.antmedia.app.SamplePacketListener;
+import io.antmedia.app.ScreenshotPluginFrameListener;
+import io.antmedia.app.ScreenshotPluginPacketListener;
 import io.antmedia.muxer.IAntMediaStreamHandler;
 import io.antmedia.muxer.MuxAdaptor;
 import io.antmedia.plugin.api.IFrameListener;
@@ -23,8 +23,8 @@ public class ScreenshotPlugin implements ApplicationContextAware, IStreamListene
 	protected static Logger logger = LoggerFactory.getLogger(ScreenshotPlugin.class);
 	
 	private Vertx vertx;
-	private SampleFrameListener frameListener = new SampleFrameListener();
-	private SamplePacketListener packetListener = new SamplePacketListener();
+	private ScreenshotPluginFrameListener frameListener = new ScreenshotPluginFrameListener();
+	private ScreenshotPluginPacketListener packetListener = new ScreenshotPluginPacketListener();
 	private ApplicationContext applicationContext;
 
 	@Override

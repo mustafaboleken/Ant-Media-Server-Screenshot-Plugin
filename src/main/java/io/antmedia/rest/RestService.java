@@ -27,7 +27,6 @@ public class RestService {
 	@Context
 	protected ServletContext servletContext;
 	Gson gson = new Gson();
-
 	
 	@POST
 	@Path("/register/{streamId}")

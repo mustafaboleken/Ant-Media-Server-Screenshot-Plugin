@@ -8,9 +8,9 @@ import io.antmedia.plugin.ScreenshotPlugin;
 import io.antmedia.plugin.api.IFrameListener;
 import io.antmedia.plugin.api.StreamParametersInfo;
 
-public class SampleFrameListener implements IFrameListener{
+public class ScreenshotPluginFrameListener implements IFrameListener{
 	
-	protected static Logger logger = LoggerFactory.getLogger(SampleFrameListener.class);
+	protected static Logger logger = LoggerFactory.getLogger(ScreenshotPluginFrameListener.class);
 
 	private int audioFrameCount = 0;
 	private int videoFrameCount = 0;
@@ -29,22 +29,22 @@ public class SampleFrameListener implements IFrameListener{
 
 	@Override
 	public void writeTrailer(String streamId) {
-		logger.info("SampleFrameListener.writeTrailer() for streamId:{}", streamId);
+		logger.info("ScreenshotPluginFrameListener.writeTrailer() for streamId:{}", streamId);
 	}
 
 	@Override
 	public void setVideoStreamInfo(String streamId, StreamParametersInfo videoStreamInfo) {
-		logger.info("SampleFrameListener.setVideoStreamInfo() for streamId:{}", streamId);		
+		logger.info("ScreenshotPluginFrameListener.setVideoStreamInfo() for streamId:{}", streamId);		
 	}
 
 	@Override
 	public void setAudioStreamInfo(String streamId, StreamParametersInfo audioStreamInfo) {
-		logger.info("SampleFrameListener.setAudioStreamInfo() for streamId:{}", streamId);		
+		logger.info("ScreenshotPluginFrameListener.setAudioStreamInfo() for streamId:{}", streamId);		
 	}
 
 	@Override
 	public void start() {
-		logger.info("SampleFrameListener.start()");		
+		logger.info("ScreenshotPluginFrameListener.start()");		
 	}
 
 	public String getStats() {
