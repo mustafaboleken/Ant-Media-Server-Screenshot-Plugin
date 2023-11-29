@@ -68,4 +68,23 @@ public class ScreenshotPlugin implements ApplicationContextAware, IStreamListene
 		return frameListener.addIntoScreenshotQueue(streamId);
 	}
 
+	@Override
+	public void streamStarted(String s) {
+
+	}
+
+	@Override
+	public void streamFinished(String s) {
+
+	}
+
+	@Override
+	public void joinedTheRoom(String s, String s1) {
+
+	}
+
+	@Override
+	public void leftTheRoom(String s, String s1) {
+
+	}
 }

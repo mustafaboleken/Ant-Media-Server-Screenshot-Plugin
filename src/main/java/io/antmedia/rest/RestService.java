@@ -1,12 +1,7 @@
 package io.antmedia.rest;
 
 import jakarta.servlet.ServletContext;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -43,9 +38,10 @@ public class RestService {
 	@Path("/take-screenshot")
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
-	public String takeScreenshot() {
+	public Response takeScreenshot(@QueryParam("streamId") String streamId) {
 		ScreenshotPlugin app = getScreenshotPluginApp();
-		return app.addIntoScreenshotQueue();
+		app.addIntoScreenshotQueue(streamId);
+		return Response.status(Status.OK).entity("").build();
 	}
 	
 	private ScreenshotPlugin getScreenshotPluginApp() {

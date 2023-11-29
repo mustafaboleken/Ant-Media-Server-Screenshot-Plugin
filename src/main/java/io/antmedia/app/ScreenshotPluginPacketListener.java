@@ -41,8 +41,4 @@ public class ScreenshotPluginPacketListener implements IPacketListener{
 		logger.info("ScreenshotPluginPacketListener.setAudioStreamInfo() for streamId:{}", streamId);		
 	}
 
-	public String getStats() {
-		return "packets:"+packetCount;
-	}
-
 }

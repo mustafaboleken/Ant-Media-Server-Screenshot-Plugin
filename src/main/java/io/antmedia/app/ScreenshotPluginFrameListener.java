@@ -1,53 +1,49 @@
 package io.antmedia.app;
 
-import org.bytedeco.ffmpeg.avcodec.AVPacket;
-import org.bytedeco.ffmpeg.avformat.AVFormatContext;
-import org.bytedeco.ffmpeg.avformat.AVIOContext;
-import org.bytedeco.ffmpeg.avformat.AVOutputFormat;
-import org.bytedeco.ffmpeg.avformat.AVStream;
-import org.bytedeco.ffmpeg.avutil.AVDictionary;
 import org.bytedeco.ffmpeg.avutil.AVFrame;
-import org.bytedeco.ffmpeg.global.avcodec;
-import org.bytedeco.ffmpeg.global.avformat;
-import org.bytedeco.ffmpeg.global.avutil;
-import org.bytedeco.javacpp.BytePointer;
-import org.bytedeco.javacpp.Pointer;
 
+import java.awt.*;
+import java.awt.image.*;
+import java.io.File;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.sql.Timestamp;
+import java.util.PriorityQueue;
+import java.util.Queue;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.antmedia.plugin.ScreenshotPlugin;
 import io.antmedia.plugin.api.IFrameListener;
 import io.antmedia.plugin.api.StreamParametersInfo;
+
+import javax.imageio.ImageIO;
+
+import static io.antmedia.app.Utils.convertAVFrameToByteArray;
 
 public class ScreenshotPluginFrameListener implements IFrameListener{
 	
 	protected static Logger logger = LoggerFactory.getLogger(ScreenshotPluginFrameListener.class);
 
-	private int audioFrameCount = 0;
-	private int videoFrameCount = 0;
-
-	private Queue<String> queue = new PriorityQueue<Obj> ();
+	private final Queue<String> queue = new PriorityQueue<>();
 
 	@Override
 	public AVFrame onAudioFrame(String streamId, AVFrame audioFrame) {
-		audioFrameCount ++;
 		return audioFrame;
 	}
 
 	@Override
 	public AVFrame onVideoFrame(String streamId, AVFrame videoFrame) {
-		videoFrameCount ++;
 
 		if (queue.contains(streamId)) {
-			AVFrame rgbFrame = convertToRGB(inputFrame);
 
-			saveFrameAsPNG(rgbFrame, outputFilePath);
+            try {
+                Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+                String outputFilePath = "output" + streamId + timestamp.getTime() + ".png";
+
+                saveFrameAsPNG(videoFrame, outputFilePath);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
 
 			queue.remove(streamId);
 		}
@@ -75,105 +71,28 @@ public class ScreenshotPluginFrameListener implements IFrameListener{
 		logger.info("ScreenshotPluginFrameListener.start()");		
 	}
 
-	public String getStats() {
-		return "audio frames:"+audioFrameCount+"\t"+"video frames:"+videoFrameCount;
+	public boolean addIntoScreenshotQueue(String streamId) {
+		if(!queue.contains(streamId)) {
+			queue.add(streamId);
+			return true;
+		} else {
+			return false;
+		}
 	}
 
-	public void addIntoScreenshotQueue(String streamId) {
-		queue.add(streamId);
-	}
+    private static void saveFrameAsPNG(AVFrame frame, String outputFilePath) throws IOException {
+        AVFrame rgbFrame = Utils.toRGB(frame);
+        byte[] frameData = convertAVFrameToByteArray(rgbFrame);
 
-	private static AVFrame convertToRGB(AVFrame inputFrame) {
-        AVFrame rgbFrame = avutil.av_frame_alloc();
+        DataBuffer buffer = new DataBufferByte(frameData, frameData.length);
 
-        if (rgbFrame == null) {
-            throw new RuntimeException("Failed to allocate RGB frame");
-        }
+        //3 bytes per pixel: red, green, blue
+        WritableRaster raster = Raster.createInterleavedRaster(buffer, rgbFrame.width(), rgbFrame.height(), 3 * rgbFrame.width(), 3, new int[] {0, 1, 2}, (Point)null);
+        ColorModel cm = new ComponentColorModel(ColorModel.getRGBdefault().getColorSpace(), false, true, Transparency.OPAQUE, DataBuffer.TYPE_BYTE);
+        BufferedImage image = new BufferedImage(cm, raster, true, null);
 
-        // Allocate buffer for RGB data
-        int bufferSize = avutil.av_image_get_buffer_size(avutil.AV_PIX_FMT_RGB24, inputFrame.width(), inputFrame.height(), 1);
-        BytePointer buffer = new BytePointer(avutil.av_malloc(bufferSize));
+        ImageIO.write(image, "png", new File(outputFilePath));
 
-        // Assign buffer to the RGB frame
-        avutil.av_image_fill_arrays(rgbFrame.data(), rgbFrame.linesize(), buffer, avutil.AV_PIX_FMT_RGB24,
-                inputFrame.width(), inputFrame.height(), 1);
-
-        // Set properties for the RGB frame
-        rgbFrame.width(inputFrame.width());
-        rgbFrame.height(inputFrame.height());
-        rgbFrame.format(avutil.AV_PIX_FMT_RGB24);
-
-        // Create SwsContext for color conversion
-        SwsContext swsContext = swscale.sws_getContext(inputFrame.width(), inputFrame.height(), inputFrame.format(),
-                inputFrame.width(), inputFrame.height(), avutil.AV_PIX_FMT_RGB24, swscale.SWS_BICUBIC, null, null, (DoublePointer) null);
-
-        // Convert the input frame to RGB
-        swscale.sws_scale(swsContext, inputFrame.data(), inputFrame.linesize(), 0, inputFrame.height(),
-                rgbFrame.data(), rgbFrame.linesize());
-
-        // Free the SwsContext
-        swscale.sws_freeContext(swsContext);
-
-        return rgbFrame;
-    }
-
-    private static void saveFrameAsPNG(AVFrame frame, String outputFilePath) {
-        AVOutputFormat format = avformat.av_guess_format("image2", outputFilePath, null);
-        if (format == null) {
-            throw new RuntimeException("Could not determine image format");
-        }
-
-        AVFormatContext formatContext = avformat.avformat_alloc_context();
-        if (formatContext == null) {
-            throw new RuntimeException("Could not allocate format context");
-        }
-
-        formatContext.oformat(format);
-
-        AVStream stream = avformat.avformat_new_stream(formatContext, null);
-        if (stream == null) {
-            throw new RuntimeException("Could not allocate stream");
-        }
-
-        AVCodecContext codecContext = stream.codec();
-
-        codecContext.codec_id(format.video_codec());
-        codecContext.codec_type(avutil.AVMEDIA_TYPE_VIDEO);
-
-        codecContext.width(frame.width());
-        codecContext.height(frame.height());
-        codecContext.pix_fmt(avutil.AV_PIX_FMT_RGB24);
-
-        if (avformat.avio_open(formatContext.pb(), outputFilePath, AVIOContext.AVIO_FLAG_WRITE) < 0) {
-            throw new RuntimeException("Could not open output file");
-        }
-
-        if (avformat.avformat_write_header(formatContext, new AVDictionary(null)) < 0) {
-            throw new RuntimeException("Error writing header");
-        }
-
-        AVPacket packet = new AVPacket();
-        avcodec.av_init_packet(packet);
-
-        int[] gotPacket = {0};
-        if (avcodec.avcodec_encode_video2(codecContext, packet, frame, gotPacket) < 0) {
-            throw new RuntimeException("Error encoding video");
-        }
-
-        if (gotPacket[0] != 0) {
-            if (avformat.av_write_frame(formatContext, packet) < 0) {
-                throw new RuntimeException("Error writing frame");
-            }
-        }
-
-        if (avformat.av_write_trailer(formatContext) < 0) {
-            throw new RuntimeException("Error writing trailer");
-        }
-
-        avformat.avcodec_close(codecContext);
-        avformat.avio_close(formatContext.pb());
-
-        avformat.avformat_free_context(formatContext);
     }
 
 }
