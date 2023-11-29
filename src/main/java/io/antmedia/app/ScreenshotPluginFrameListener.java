@@ -2,7 +2,8 @@ package io.antmedia.app;
 
 import org.bytedeco.ffmpeg.avutil.AVFrame;
 
-import java.awt.*;
+import java.nio.file.Paths;
+import java.nio.file.Files;
 import java.awt.image.*;
 import java.io.File;
 import java.io.IOException;
@@ -37,8 +38,10 @@ public class ScreenshotPluginFrameListener implements IFrameListener{
 		if (queue.contains(streamId)) {
 
             try {
-                Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-                String outputFilePath = "output" + streamId + timestamp.getTime() + ".png";
+				String savedFolder = "./screenshots";
+				Files.createDirectories(Paths.get(savedFolder));
+				Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+                String outputFilePath = savedFolder + "/" + "output" + streamId + timestamp.getTime() + ".png";
 
                 saveFrameAsPNG(videoFrame, outputFilePath);
             } catch (IOException e) {
@@ -84,14 +87,25 @@ public class ScreenshotPluginFrameListener implements IFrameListener{
         AVFrame rgbFrame = Utils.toRGB(frame);
         byte[] frameData = convertAVFrameToByteArray(rgbFrame);
 
-        DataBuffer buffer = new DataBufferByte(frameData, frameData.length);
+		BufferedImage image = new BufferedImage(rgbFrame.width(), rgbFrame.height(), BufferedImage.TYPE_INT_ARGB);
 
-        //3 bytes per pixel: red, green, blue
-        WritableRaster raster = Raster.createInterleavedRaster(buffer, rgbFrame.width(), rgbFrame.height(), 3 * rgbFrame.width(), 3, new int[] {0, 1, 2}, (Point)null);
-        ColorModel cm = new ComponentColorModel(ColorModel.getRGBdefault().getColorSpace(), false, true, Transparency.OPAQUE, DataBuffer.TYPE_BYTE);
-        BufferedImage image = new BufferedImage(cm, raster, true, null);
+		// Iterate over array and set image pixel-by-pixel
+		for (int i = 0; i < frameData.length; i += 4) {
+			int row = (i / 4) / rgbFrame.width();
+			int column = (i / 4) % rgbFrame.width();
 
-        ImageIO.write(image, "png", new File(outputFilePath));
+			int red = frameData[i];
+			int green = frameData[i + 1];
+			int blue = frameData[i + 2];
+			int alpha = frameData[i + 3];
+
+			// rgb value is 8 + 8 + 8 + 8 bits, each for r/g/b/a number
+			int rgb = (alpha << 24) | (red << 16) | (green << 8) | blue;
+
+			image.setRGB(column, row, rgb);
+		}
+
+		ImageIO.write(image, "png", new File(outputFilePath));
 
     }
 
