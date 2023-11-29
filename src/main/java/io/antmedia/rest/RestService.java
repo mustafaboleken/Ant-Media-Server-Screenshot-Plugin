@@ -43,9 +43,9 @@ public class RestService {
 	@Path("/take-screenshot")
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
-	public String getStats() {
+	public String takeScreenshot() {
 		ScreenshotPlugin app = getScreenshotPluginApp();
-		return app.getStats();
+		return app.addIntoScreenshotQueue();
 	}
 	
 	private ScreenshotPlugin getScreenshotPluginApp() {

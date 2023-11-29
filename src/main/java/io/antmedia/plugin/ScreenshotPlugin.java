@@ -64,28 +64,8 @@ public class ScreenshotPlugin implements ApplicationContextAware, IStreamListene
 		return app.createCustomBroadcast(streamId);
 	}
 
-	public String getStats() {
-		return frameListener.getStats() + "\t" + packetListener.getStats();
-	}
-
-	@Override
-	public void streamStarted(String streamId) {
-		logger.info("*************** Stream Started: {} ***************", streamId);
-	}
-
-	@Override
-	public void streamFinished(String streamId) {
-		logger.info("*************** Stream Finished: {} ***************", streamId);
-	}
-
-	@Override
-	public void joinedTheRoom(String roomId, String streamId) {
-		logger.info("*************** Stream Id:{} joined the room:{} ***************", streamId, roomId);
-	}
-
-	@Override
-	public void leftTheRoom(String roomId, String streamId) {
-		logger.info("*************** Stream Id:{} left the room:{} ***************", streamId, roomId);	
+	public boolean addIntoScreenshotQueue(String streamId) {
+		return frameListener.addIntoScreenshotQueue(streamId);
 	}
 
 }
