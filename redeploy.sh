@@ -1,6 +1,7 @@
 #!/bin/sh
 AMS_DIR=~/softwares/ant-media-server
 mvn clean install -Dmaven.javadoc.skip=true -Dmaven.test.skip=true -Dgpg.skip=true
+cd $AMS_DIR
 OUT=$?
 
 if [ $OUT -ne 0 ]; then
@@ -15,4 +16,4 @@ OUT=$?
 if [ $OUT -ne 0 ]; then
     exit $OUT
 fi
-#./start-debug.sh
+./start-debug.sh
